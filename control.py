@@ -1,5 +1,5 @@
 # -*- coding:utf8 -*-
-#!/usr/bin/env python
+#! /bin/env python
 
 import top.api
 import sys
@@ -32,12 +32,22 @@ class HTTPHandle(BaseHTTPRequestHandler):
         except Exception, e:
             print(e)
 
+    def transDicts(params):
+        dicts = {}
+        if len(params) == 0:
+            return
+        params = params.split('&')
+        for param in params:
+            dicts[param.split('=')[0]] = param.split('=')[1]
+        return dicts
+
     def do_POST(self):
         self.logger.info("start to handle request")
         datas = self.rfile.read(int(self.headers['content-length']))
         #datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
         self.logger.info("request: " + datas)
-        request_data = json.loads(datas,encoding="utf-8")
+        request_data = self.transDicts(datas)
+        #request_data = json.loads(datas,encoding="utf-8")
         sms_body = request_data.get("content")
         sms_tos = request_data.get("tos")
         self.sendSMS(sms_body,sms_tos)
