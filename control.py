@@ -50,6 +50,8 @@ class HTTPHandle(BaseHTTPRequestHandler):
         #request_data = json.loads(datas,encoding="utf-8")
         sms_body = request_data.get("content")
         sms_tos = request_data.get("tos")
+        self.logger.info("sms_body: " + sms_body)
+        self.logger.info("sms_tos: " + sms_tos)
         self.sendSMS(sms_body,sms_tos)
         self.send_response(200)
         self.end_headers()
