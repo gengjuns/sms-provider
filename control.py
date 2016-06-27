@@ -28,7 +28,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
         test.sms_template_code = "SMS_5940007"
         try:
             res = test.getResponse()
-            print(res)
+            return res
         except Exception, e:
             print(e)
 
@@ -52,7 +52,8 @@ class HTTPHandle(BaseHTTPRequestHandler):
         sms_tos = request_data.get("tos")
         self.logger.info("sms_body: " + sms_body)
         self.logger.info("sms_tos: " + sms_tos)
-        self.sendSMS(sms_body,sms_tos)
+        res = self.sendSMS(sms_body,sms_tos)
+        self.logger.info("sms response: " + res)
         self.send_response(200)
         self.end_headers()
         self.logger.info("send successfully")
