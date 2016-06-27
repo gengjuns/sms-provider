@@ -28,7 +28,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
         test.sms_template_code = "SMS_5940007"
         try:
             res = test.getResponse()
-            self.logger.info("sms response: " + json.dump(res))
+            self.logger.info("sms response: " + json.dumps(res))
 
         except Exception, e:
             self.logger.error(e)
