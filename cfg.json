@@ -1,0 +1,6 @@
+{
+  "port": 8888,
+
+  "app.key": "123xxx",
+  "app.secret": "333xxxxx"
+}
