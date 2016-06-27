@@ -31,7 +31,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
             self.logger.info("sms response: " + json.dump(res))
 
         except Exception, e:
-            self.logger.info(e)
+            self.logger.error(e)
 
     def transDicts(self,params):
         dicts = {}
