@@ -4,6 +4,7 @@
 import top.api
 import sys
 import os
+import re
 import json
 import sys
 import logging
@@ -15,7 +16,7 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 class HTTPHandle(BaseHTTPRequestHandler):
     logging.config.fileConfig("./logging.ini")
     logger = logging.getLogger(__name__)
-    def sendSMS(self, body, tos):
+    def sendSMS(self, parameter, tos):
         with open('./cfg.json', 'r') as f:
             data = json.load(f)
         appinfo = top.appinfo(data["app.key"], data["app.secret"])
@@ -23,7 +24,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
         test.set_app_info(appinfo)
         test.sms_type = "normal"
         test.sms_free_sign_name = "注册验证"
-        test.sms_param = "{\"code\":\"1234\",\"product\":\""+body+"\"}"
+        test.sms_param = json.dumps(parameter)
         test.rec_num = tos
         test.sms_template_code = "SMS_5940007"
         try:
@@ -49,11 +50,21 @@ class HTTPHandle(BaseHTTPRequestHandler):
         self.logger.info("request: " + datas)
         request_data = self.transDicts(datas)
         #request_data = json.loads(datas,encoding="utf-8")
-        sms_body = request_data.get("content")
+        pattern = r"(\[.*?\])";
+        guid = re.findall(pattern, request_data.get("content"), re.M)
+        sms_params={}
+        if (len(guid) > 2):
+            #sms_params["priority"]=guid[0].replace('[', '').replace(']', '')
+            #sms_params["status"] = guid[1].replace('[', '').replace(']', '')
+            #sms_params["name"] = guid[2].replace('[', '').replace(']', '')
+
+            sms_params["code"] = guid[0].replace('[', '').replace(']', '')
+            sms_params["product"] = guid[1].replace('[', '').replace(']', '')
+
         sms_tos = request_data.get("tos")
-        self.logger.info("sms_body: " + sms_body)
-        self.logger.info("sms_tos: " + sms_tos)
-        self.sendSMS(sms_body,sms_tos)
+        #self.logger.info("sms_body: " + sms_body)
+        #self.logger.info("sms_tos: " + sms_tos)
+        self.sendSMS(sms_params,sms_tos)
 
         self.send_response(200)
         self.end_headers()
