@@ -32,7 +32,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
         except Exception, e:
             print(e)
 
-    def transDicts(params):
+    def transDicts(self,params):
         dicts = {}
         if len(params) == 0:
             return
