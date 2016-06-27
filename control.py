@@ -6,12 +6,15 @@ import sys
 import os
 import json
 import sys
-import urllib
+import logging
+from  logging.config import logging
 default_encoding = 'utf-8'
 
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 class HTTPHandle(BaseHTTPRequestHandler):
+    logging.config.fileConfig("./logging.ini")
+    logger = logging.getLogger(__name__)
     def sendSMS(self, body, tos):
         with open('./cfg.json', 'r') as f:
             data = json.load(f)
@@ -30,15 +33,17 @@ class HTTPHandle(BaseHTTPRequestHandler):
             print(e)
 
     def do_POST(self):
+        self.logger.info("start to handle request")
         datas = self.rfile.read(int(self.headers['content-length']))
         #datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
-        print datas
+        self.logger.info("request: " + datas)
         request_data = json.loads(datas,encoding="utf-8")
         sms_body = request_data.get("content")
         sms_tos = request_data.get("tos")
         self.sendSMS(sms_body,sms_tos)
         self.send_response(200)
         self.end_headers()
+        self.logger.info("send successfully")
 
 
 def port_to_pid(port):
