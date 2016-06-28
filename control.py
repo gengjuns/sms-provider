@@ -8,8 +8,7 @@ import re
 import json
 import sys
 import logging
-from  logging.config import logging
-from  Daemon import Daemon
+import Daemon
 
 default_encoding = 'utf-8'
 
@@ -128,7 +127,7 @@ def main(argv):
         http_server.serve_forever()
 
 
-class HttpServerDaemon(Daemon):
+class HttpServerDaemon(Daemon.Daemon):
     def _run(self):
         with open('./cfg.json', 'r') as f:
             data = json.load(f)
