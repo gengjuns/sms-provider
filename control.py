@@ -1,5 +1,5 @@
 # -*- coding:utf8 -*-
-# ! /bin/env python
+# ! /usr/bin/env python
 
 import top.api
 import sys
