@@ -9,7 +9,7 @@ __pycache__/
 .DS_Store
 .git
 .idea
-
+*.pyc
 # Distribution / packaging
 .Python
 env/

@@ -1,6 +1,9 @@
 {
   "port": 8888,
 
-  "app.key": "123xxx",
-  "app.secret": "333xxxxx"
+  "app.key": "xxx",
+  "app.secret": "yyyy",
+
+  "sms.template.code": "SMS_11041146",
+  "sms.sign.name": "注册验证"
 }

@@ -1,5 +1,5 @@
 # -*- coding:utf8 -*-
-#! /bin/env python
+# ! /bin/env python
 
 import top.api
 import sys
@@ -9,32 +9,44 @@ import json
 import sys
 import logging
 from  logging.config import logging
+from  Daemon import Daemon
+
 default_encoding = 'utf-8'
 
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
-class HTTPHandle(BaseHTTPRequestHandler):
-    logging.config.fileConfig("./logging.ini")
-    logger = logging.getLogger(__name__)
-    def sendSMS(self, parameter, tos):
-        with open('./cfg.json', 'r') as f:
-            data = json.load(f)
-        appinfo = top.appinfo(data["app.key"], data["app.secret"])
-        test = top.api.AlibabaAliqinFcSmsNumSendRequest()
-        test.set_app_info(appinfo)
-        test.sms_type = "normal"
-        test.sms_free_sign_name = "注册验证"
-        test.sms_param = json.dumps(parameter)
-        test.rec_num = tos
-        test.sms_template_code = "SMS_5940007"
+class SmsSender:
+    def __init__(self,logger):
+        #logging.config.fileConfig("./logging.ini")
+        self.logger = logger
+
+    def send(self, parameter, tos):
+
+        self.logger.info("start to send")
         try:
+            with open('./cfg.json', 'r') as f:
+                data = json.load(f)
+            appinfo = top.appinfo(data["app.key"], data["app.secret"])
+            test = top.api.AlibabaAliqinFcSmsNumSendRequest()
+            test.set_app_info(appinfo)
+            test.sms_type = "normal"
+            test.sms_free_sign_name = data["sms.sign.name"]
+            test.sms_param = json.dumps(parameter)
+            test.rec_num = tos
+            test.sms_template_code = data["sms.template.code"]
+
             res = test.getResponse()
+            #self.logger.info("end to send")
+            # print "sms response: " + json.dumps(res)
             self.logger.info("sms response: " + json.dumps(res))
 
         except Exception, e:
+            # print e
             self.logger.error(e)
 
-    def transDicts(self,params):
+class HTTPHandle(BaseHTTPRequestHandler):
+
+    def transDicts(self, params):
         dicts = {}
         if len(params) == 0:
             return
@@ -44,33 +56,34 @@ class HTTPHandle(BaseHTTPRequestHandler):
         return dicts
 
     def do_POST(self):
-        self.logger.info("start to handle request")
+        logging.config.fileConfig("./logging.ini")
+        logger = logging.getLogger(__name__)
+        logger.info("start to handle request")
         datas = self.rfile.read(int(self.headers['content-length']))
-        #datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
-        self.logger.info("request: " + datas)
+        # datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
+        logger.info("request: " + datas)
         request_data = self.transDicts(datas)
-        #request_data = json.loads(datas,encoding="utf-8")
+        # request_data = json.loads(datas,encoding="utf-8")
         pattern = r"(\[.*?\])";
         guid = re.findall(pattern, request_data.get("content"), re.M)
-        sms_params={}
+        sms_params = {}
         if (len(guid) > 2):
-            #sms_params["priority"]=guid[0].replace('[', '').replace(']', '')
-            #sms_params["status"] = guid[1].replace('[', '').replace(']', '')
-            #sms_params["name"] = guid[2].replace('[', '').replace(']', '')
-
-            sms_params["code"] = guid[0].replace('[', '').replace(']', '')
-            sms_params["product"] = guid[1].replace('[', '').replace(']', '')
+            sms_params["priority"] = guid[0].replace('[', '').replace(']', '')
+            sms_params["status"] = guid[1].replace('[', '').replace(']', '')
+            sms_params["name"] = guid[2].replace('[', '').replace(']', '')
 
         sms_tos = request_data.get("tos")
-        #self.logger.info("sms_body: " + sms_body)
-        #self.logger.info("sms_tos: " + sms_tos)
-        self.sendSMS(sms_params,sms_tos)
+        # self.logger.info("sms_body: " + guid)
+        logger.info("sms_tos: " + sms_tos)
+        sms_sender = SmsSender(logger)
+        logger.info("sms_tossss: " + sms_tos)
 
-        self.send_response(200)
+        sms_sender.send(sms_params, sms_tos)
+        #self.send_response(200)
         self.end_headers()
-        self.logger.info("send successfully")
+        #logger.info("send successfully")
 
-
+#@Deprecated
 def port_to_pid(port):
     output = os.popen('lsof -i tcp:' + str(port))
     res = output.read()
@@ -80,12 +93,13 @@ def port_to_pid(port):
     else:
         return 0
 
+#@Deprecated
 def kill_process(pid):
     if pid != 0:
         os.popen('kill -9 ' + pid)
     print "killed pid: " + pid
 
-
+#@Deprecated
 def main(argv):
     with open('./cfg.json', 'r') as f:
         data = json.load(f)
@@ -113,8 +127,37 @@ def main(argv):
         http_server = HTTPServer(('127.0.0.1', port), HTTPHandle)
         http_server.serve_forever()
 
+
+class HttpServerDaemon(Daemon):
+    def _run(self):
+        with open('./cfg.json', 'r') as f:
+            data = json.load(f)
+        port = data["port"];
+        http_server = HTTPServer(('127.0.0.1', port), HTTPHandle)
+        self.logger.info('sms provider start runing')
+        http_server.serve_forever()
+
+
 if __name__ == '__main__':
     if sys.getdefaultencoding() != default_encoding:
         reload(sys)
         sys.setdefaultencoding(default_encoding)
-    main(sys.argv)
+    daemon = HttpServerDaemon("./var/smsprovider.pid")
+    if len(sys.argv) > 1:
+        action = sys.argv[1]
+    else:
+        action = ""
+
+    if action == "" or action == "start":
+        daemon.start()
+    elif action == "stop":
+        daemon.stop()
+    elif action == "restart":
+        daemon.restart()
+    elif action == "status":
+        print daemon.status()
+    else:
+        print "Unknown command"
+        print "usage: %s start|stop|restart|status" % sys.argv[0]
+        sys.exit(2)
+    sys.exit(0)
