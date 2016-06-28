@@ -2,7 +2,7 @@
 # -*- coding:utf8 -*-
 
 import top.api
-import sys
+import urllib
 import os
 import re
 import json
@@ -60,7 +60,7 @@ class HTTPHandle(BaseHTTPRequestHandler):
         logger = logging.getLogger(__name__)
         logger.info("start to handle request")
         datas = self.rfile.read(int(self.headers['content-length']))
-        # datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
+        datas = urllib.unquote(datas).decode("utf-8", 'ignore')  # 指定编码方式
         logger.info("request: " + datas)
         request_data = self.transDicts(datas)
         # request_data = json.loads(datas,encoding="utf-8")
